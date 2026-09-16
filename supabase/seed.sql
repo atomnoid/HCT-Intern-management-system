@@ -1,0 +1,3 @@
+-- Development seed data should be run after creating auth users.
+-- Replace the UUIDs below with real auth.users ids from your local Supabase project.
+-- The app relies on auth + profiles; do not run this file against production.
