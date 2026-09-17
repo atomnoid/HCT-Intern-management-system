@@ -36,7 +36,11 @@ export default async function PromisesPage({
   ]);
 
   // Trigger automated deadline & promise missed check
-  await supabase.rpc("run_deadline_reminders").catch(() => null);
+  try {
+    await supabase.rpc("run_deadline_reminders");
+  } catch {
+    // Non-fatal error fallback
+  }
 
   const activeTasks = tasks.filter((t) => t.status !== "completed");
   const filterTab = String(params.filter ?? "all");
