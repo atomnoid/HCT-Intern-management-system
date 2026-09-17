@@ -1,6 +1,7 @@
-export type UserRole = "lead" | "intern";
+export type UserRole = "lead" | "employee" | "intern";
 export type TaskStatus = "todo" | "in_progress" | "blocked" | "in_review" | "completed";
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
+export type PromiseStatus = "pending" | "fulfilled" | "missed" | "cancelled";
 
 export type Profile = {
   id: string;
@@ -8,6 +9,30 @@ export type Profile = {
   email: string | null;
   avatar_url: string | null;
   role: UserRole;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Notification = {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  type: string;
+  is_read: boolean;
+  link_url: string | null;
+  created_at: string;
+};
+
+export type PromiseItem = {
+  id: string;
+  user_id: string;
+  task_id: string | null;
+  title: string;
+  description: string | null;
+  due_date: string;
+  status: PromiseStatus;
   created_at: string;
   updated_at: string;
 };

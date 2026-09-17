@@ -3,7 +3,11 @@ import type { Profile, Task, TaskActivity, TaskDetail } from "@/types/database";
 
 const taskSelect = "*, assignee:profiles!tasks_assignee_id_fkey(*), creator:profiles!tasks_created_by_fkey(*)";
 
-export async function getTasks(supabase: SupabaseClient, profile: Profile, searchParams?: Record<string, string | string[] | undefined>) {
+export async function getTasks(
+  supabase: SupabaseClient,
+  profile: Profile,
+  searchParams?: Record<string, string | string[] | undefined>
+) {
   let query = supabase.from("tasks").select(taskSelect);
 
   if (searchParams?.status) query = query.eq("status", String(searchParams.status));
@@ -35,15 +39,27 @@ export async function getTaskDetail(supabase: SupabaseClient, id: string) {
   return data as TaskDetail;
 }
 
-export async function getInterns(supabase: SupabaseClient) {
-  const { data, error } = await supabase.from("profiles").select("*").eq("role", "intern").order("full_name");
+export async function getEmployees(supabase: SupabaseClient) {
+  // Query both 'employee' and 'intern' roles for backward compatibility
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .in("role", ["employee", "intern"])
+    .eq("is_active", true)
+    .order("full_name");
   if (error) throw error;
   return (data ?? []) as Profile[];
 }
 
+/** @deprecated Use getEmployees instead */
+export const getInterns = getEmployees;
+
 export async function getRecentActivity(supabase: SupabaseClient) {
-  const query = supabase.from("task_activity").select("*, actor:profiles(*)").order("created_at", { ascending: false }).limit(8);
-  const { data, error } = await query;
+  const { data, error } = await supabase
+    .from("task_activity")
+    .select("*, actor:profiles(*)")
+    .order("created_at", { ascending: false })
+    .limit(8);
   if (error) throw error;
   return (data ?? []) as TaskActivity[];
 }

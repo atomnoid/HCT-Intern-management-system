@@ -2,7 +2,78 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: dark; }
-body { @apply bg-surface-app text-slate-100 antialiased; }
-button, input, select, textarea { font: inherit; }
-.focus-ring { @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  color-scheme: dark;
+  --color-bg-app:     #0b0f14;
+  --color-bg-sidebar: #0f1419;
+  --color-bg-panel:   #131a22;
+  --color-bg-raised:  #18212d;
+  --color-border:     #1e2d3d;
+  --color-border-subtle: #172030;
+  --color-text-primary: #e8edf2;
+  --color-text-muted:   #7b8fa3;
+  --color-text-faint:   #4a5a6a;
+  --color-accent:     #3b82f6;
+  --color-accent-hover: #2563eb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--color-bg-app);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+/* Focus ring utility */
+.focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 focus-visible:ring-offset-[#0b0f14];
+}
+
+/* Skeleton pulse */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.3; }
+}
+
+.skeleton {
+  background-color: #1a2535;
+  border-radius: 4px;
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a3a4d;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a4f66;
+}
+
+/* Transition utilities */
+.transition-base {
+  @apply transition-colors duration-150 ease-in-out;
+}

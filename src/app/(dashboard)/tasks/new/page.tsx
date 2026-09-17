@@ -1,24 +1,36 @@
 import { redirect } from "next/navigation";
-import { PageTitle } from "@/components/page-title";
-import { DataError } from "@/components/data-error";
-import { SetupRequired } from "@/components/setup-required";
-import { TaskCreateForm } from "@/components/tasks/task-create-form";
-import { getInterns } from "@/lib/data";
 import { getSessionProfile } from "@/lib/auth";
-import { hasSupabaseEnv } from "@/lib/env";
+import { createClient } from "@/lib/supabase/server";
+import { getEmployees } from "@/lib/data";
+import { TaskCreateForm } from "@/components/tasks/task-create-form";
+
+export const metadata = {
+  title: "New Task | HCT Tracker",
+};
 
 export default async function NewTaskPage() {
-  if (!hasSupabaseEnv()) return <SetupRequired />;
-  const session = await getSessionProfile().catch((error) => ({ error }));
-  if ("error" in session) return <DataError message={session.error instanceof Error ? session.error.message : "Could not load your profile."} />;
-  const { supabase, profile } = session;
+  const { profile } = await getSessionProfile();
+
+  // Only leads can create tasks
   if (profile.role !== "lead") redirect("/tasks");
-  const interns = await getInterns(supabase).catch((error) => ({ error }));
-  if (!Array.isArray(interns)) return <DataError message={interns.error instanceof Error ? interns.error.message : "Could not load intern profiles."} />;
+
+  const supabase = await createClient();
+  let employees: Awaited<ReturnType<typeof getEmployees>> = [];
+  try {
+    employees = await getEmployees(supabase);
+  } catch {
+    // Non-fatal: form will show "no employees" message
+  }
+
   return (
     <section className="max-w-3xl p-4 md:p-6">
-      <PageTitle title="Create Task" subtitle="Assign focused work with priority, due date, and optional checklist." />
-      <TaskCreateForm interns={interns} />
+      <div className="mb-5">
+        <h1 className="text-lg font-semibold text-slate-100">Create Task</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Assign focused work with priority, due date, and optional checklist.
+        </p>
+      </div>
+      <TaskCreateForm interns={employees} />
     </section>
   );
 }

@@ -1,11 +1,9 @@
 import { getSessionProfile } from "@/lib/auth";
-import { demoLead } from "@/lib/demo-data";
 
+// Previously returned demo data as fallback - now requires real auth.
+// This wrapper is kept for backward compat with pages that import getLeadContext,
+// but it now redirects to /login if unauthenticated (via getSessionProfile).
 export async function getLeadContext() {
-  const session = await getSessionProfile().catch(() => null);
-  if (!session || session.profile.role !== "lead") {
-    return { supabase: null, user: null, profile: demoLead, demo: true as const };
-  }
-
+  const session = await getSessionProfile();
   return { ...session, demo: false as const };
 }

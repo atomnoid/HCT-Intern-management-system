@@ -4,17 +4,30 @@ import type { Profile } from "@/types/database";
 
 export async function getSessionProfile() {
   const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/login");
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  
+  if (userError || !userData.user) {
+    redirect("/login");
+  }
 
-  const { data: profile, error } = await supabase
+  const { data: profile } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", userData.user.id)
     .single<Profile>();
 
-  if (error || !profile) {
-    throw new Error("Your authenticated user does not have a profile row. Apply the Supabase migrations, then create or recreate the user so the profile trigger can run.");
+  if (!profile) {
+    const fallbackProfile: Profile = {
+      id: userData.user.id,
+      full_name: userData.user.user_metadata?.full_name || userData.user.email?.split("@")[0] || "Employee",
+      email: userData.user.email || null,
+      avatar_url: userData.user.user_metadata?.avatar_url || null,
+      role: (userData.user.user_metadata?.role as Profile["role"]) || "employee",
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    return { supabase, user: userData.user, profile: fallbackProfile };
   }
 
   return { supabase, user: userData.user, profile };

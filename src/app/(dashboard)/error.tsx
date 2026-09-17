@@ -1,20 +1,33 @@
 "use client";
 
-export default function ErrorPage({ error, reset }: { error: Error; reset: () => void }) {
+import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
+
+export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  useEffect(() => {
+    // Log error to developer console for debugging
+    console.error("[Dashboard Error]", error);
+  }, [error]);
+
   return (
-    <section className="grid min-h-screen place-items-center bg-surface-app p-4">
-      <div className="max-w-2xl rounded-lg border border-red-900/70 bg-red-950/20 p-5">
-        <h1 className="text-xl font-semibold text-red-100">This page could not load</h1>
-        <p className="mt-2 text-sm leading-6 text-red-100/90">{error.message || "The request could not be completed."}</p>
-        <div className="mt-4 rounded-md border border-surface-line bg-surface-raised p-3 text-sm text-slate-200">
-          <p className="font-medium">Most common fixes:</p>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-300">
-            <li>Run both SQL files in <code>supabase/migrations</code> in Supabase SQL Editor.</li>
-            <li>Sign out and create a new account after the migrations are applied.</li>
-            <li>Restart <code>npm run dev</code> after changing <code>.env.local</code>.</li>
-          </ul>
-        </div>
-        <button onClick={reset} className="focus-ring mt-4 rounded-md border border-red-800 px-3 py-2 text-sm text-red-100">Try again</button>
+    <section className="flex min-h-64 flex-col items-center justify-center p-8 text-center">
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-red-800/50 bg-red-900/20">
+        <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+            d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+        </svg>
+      </div>
+      <h2 className="mb-1 text-sm font-semibold text-slate-100">Something went wrong</h2>
+      <p className="mb-4 max-w-sm text-sm text-slate-400">
+        {error.message || "This page could not be loaded. Please try again."}
+      </p>
+      <div className="flex gap-2">
+        <Button variant="primary" size="sm" onClick={reset}>
+          Try again
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => { window.location.href = "/dashboard"; }}>
+          Back to dashboard
+        </Button>
       </div>
     </section>
   );
