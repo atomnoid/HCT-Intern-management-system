@@ -16,7 +16,12 @@ export default async function NotificationsPage() {
   const { profile, user } = await getSessionProfile();
   const supabase = await createClient();
 
-  const notifications = await getUserNotifications(supabase, user.id);
+  let notifications: Awaited<ReturnType<typeof getUserNotifications>> = [];
+  try {
+    notifications = await getUserNotifications(supabase, user.id);
+  } catch (err) {
+    console.error("Failed to load notifications:", err);
+  }
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   return (

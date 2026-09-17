@@ -24,7 +24,10 @@ export async function getUserNotifications(supabase: SupabaseClient, userId: str
     .order("created_at", { ascending: false })
     .limit(100);
 
-  if (error) throw error;
+  if (error) {
+    console.error("Error fetching user notifications:", error);
+    return [];
+  }
   return (data ?? []) as Notification[];
 }
 
