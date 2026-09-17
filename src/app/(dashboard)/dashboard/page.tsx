@@ -1,225 +1,344 @@
+import Link from "next/link";
 import { getSessionProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import type { Task, TaskActivity } from "@/types/database";
-import { formatDistanceToNow } from "date-fns";
-import Link from "next/link";
+import {
+  getLeadDashboardMetrics,
+  getEmployeeDashboardMetrics,
+  getTeamWorkload,
+} from "@/lib/data/dashboard";
+import { StatusBadge, PriorityBadge, ProgressBar } from "@/components/ui/badges";
+import { EmptyState } from "@/components/ui/state";
+import { AlertTriangle, Clock, CheckCircle2, ShieldAlert } from "lucide-react";
+import type { Task } from "@/types/database";
 
 export const metadata = {
   title: "Dashboard | HCT Tracker",
-  description: "Overview of your team tasks and recent activity",
+  description: "Factual task metrics and operational workload overview",
 };
 
-async function getLeadDashboardData() {
-  const supabase = await createClient();
-
-  const [tasksResult, activityResult] = await Promise.all([
-    supabase
-      .from("tasks")
-      .select("id, title, status, priority, due_date, assignee:profiles!tasks_assignee_id_fkey(full_name)")
-      .order("updated_at", { ascending: false })
-      .limit(100),
-    supabase
-      .from("task_activity")
-      .select("id, task_id, action, created_at, actor:profiles(full_name)")
-      .order("created_at", { ascending: false })
-      .limit(8),
-  ]);
-
-  return {
-    tasks: (tasksResult.data ?? []) as Task[],
-    activity: (activityResult.data ?? []) as TaskActivity[],
-    error: tasksResult.error?.message ?? activityResult.error?.message ?? null,
-  };
-}
-
-async function getEmployeeDashboardData(userId: string) {
-  const supabase = await createClient();
-
-  const [tasksResult, activityResult] = await Promise.all([
-    supabase
-      .from("tasks")
-      .select("id, title, status, priority, progress, due_date")
-      .eq("assignee_id", userId)
-      .order("due_date", { ascending: true })
-      .limit(50),
-    supabase
-      .from("task_activity")
-      .select("id, task_id, action, created_at")
-      .order("created_at", { ascending: false })
-      .limit(8),
-  ]);
-
-  return {
-    tasks: (tasksResult.data ?? []) as Task[],
-    activity: (activityResult.data ?? []) as TaskActivity[],
-    error: tasksResult.error?.message ?? null,
-  };
-}
-
-function StatCard({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
-  return (
-    <div className={`rounded-lg border bg-surface-panel p-4 ${highlight && value > 0 ? "border-red-800/50 bg-red-950/10" : "border-surface-line"}`}>
-      <p className="text-xs text-slate-500">{label}</p>
-      <strong className={`mt-2 block text-2xl font-semibold ${highlight && value > 0 ? "text-red-300" : "text-slate-100"}`}>
+function MetricCard({
+  label,
+  value,
+  href,
+  highlight = false,
+}: {
+  label: string;
+  value: number;
+  href?: string;
+  highlight?: boolean;
+}) {
+  const content = (
+    <div
+      className={`rounded-lg border p-4 transition-colors ${
+        highlight && value > 0
+          ? "border-red-800/50 bg-red-950/20 hover:bg-red-950/30"
+          : "border-surface-line bg-surface-panel hover:bg-surface-raised"
+      }`}
+    >
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <strong
+        className={`mt-2 block text-2xl font-semibold ${
+          highlight && value > 0 ? "text-red-300" : "text-slate-100"
+        }`}
+      >
         {value}
       </strong>
     </div>
   );
+
+  if (href) {
+    return <Link href={href}>{content}</Link>;
+  }
+  return content;
 }
 
-const statusLabel: Record<string, string> = {
-  todo: "To Do",
-  in_progress: "In Progress",
-  blocked: "Blocked",
-  in_review: "In Review",
-  completed: "Completed",
-};
+function TaskTableRow({ task, showAssignee = false }: { task: Task; showAssignee?: boolean }) {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const isOverdue = task.due_date && task.due_date < todayStr && task.status !== "completed";
 
-const statusColor: Record<string, string> = {
-  todo: "text-slate-400 border-slate-700",
-  in_progress: "text-blue-400 border-blue-800",
-  blocked: "text-red-400 border-red-800",
-  in_review: "text-amber-400 border-amber-800",
-  completed: "text-emerald-400 border-emerald-800",
-};
-
-function TaskRow({ task }: { task: Task }) {
   return (
-    <Link
-      href={`/tasks/${task.id}`}
-      className="flex items-center gap-3 rounded-md px-3 py-2.5 hover:bg-surface-raised transition-colors duration-150"
-    >
-      <div className="flex-1 min-w-0">
-        <p className="truncate text-sm text-slate-200">{task.title}</p>
-        {task.due_date && (
-          <p className="text-xs text-slate-500">
-            Due {new Date(task.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-          </p>
+    <tr className="group border-b border-surface-line hover:bg-surface-raised transition-colors">
+      <td className="px-4 py-3">
+        <Link
+          href={`/tasks/${task.id}`}
+          className="block font-medium text-slate-200 group-hover:text-white truncate max-w-xs"
+        >
+          {task.title}
+        </Link>
+        {task.category && <span className="text-xs text-slate-500">{task.category}</span>}
+      </td>
+      <td className="px-4 py-3">
+        <StatusBadge status={task.status} />
+      </td>
+      <td className="px-4 py-3">
+        <PriorityBadge priority={task.priority} />
+      </td>
+      {showAssignee && (
+        <td className="px-4 py-3 text-xs text-slate-400">
+          {task.assignee?.full_name ?? "Unassigned"}
+        </td>
+      )}
+      <td className="px-4 py-3 text-xs">
+        {task.due_date ? (
+          <span className={isOverdue ? "font-semibold text-red-400" : "text-slate-400"}>
+            {task.due_date} {isOverdue && "(Overdue)"}
+          </span>
+        ) : (
+          <span className="text-slate-600">—</span>
         )}
-      </div>
-      <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-xs ${statusColor[task.status] ?? "text-slate-400 border-slate-700"}`}>
-        {statusLabel[task.status] ?? task.status}
-      </span>
-    </Link>
+      </td>
+      <td className="px-4 py-3">
+        <ProgressBar value={task.progress} />
+      </td>
+    </tr>
   );
 }
 
 export default async function DashboardPage() {
   const { profile, user } = await getSessionProfile();
+  const supabase = await createClient();
   const isLead = profile.role === "lead";
 
-  const { tasks, activity, error } = isLead
-    ? await getLeadDashboardData()
-    : await getEmployeeDashboardData(user.id);
+  if (isLead) {
+    const { metrics, needsAttention, reviewQueue } = await getLeadDashboardMetrics(supabase);
+    const workload = await getTeamWorkload(supabase);
 
-  const today = new Date().toISOString().slice(0, 10);
-  const completed = tasks.filter((t) => t.status === "completed").length;
-  const blocked = tasks.filter((t) => t.status === "blocked").length;
-  const inReview = tasks.filter((t) => t.status === "in_review").length;
-  const overdue = tasks.filter(
-    (t) => t.due_date && t.due_date < today && t.status !== "completed"
-  ).length;
-  const active = tasks.filter((t) => !["completed"].includes(t.status)).length;
+    return (
+      <section className="p-4 md:p-6 space-y-6">
+        <div>
+          <h1 className="text-lg font-semibold text-slate-100">Team Dashboard</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Real-time operational overview of team workload and review status.
+          </p>
+        </div>
 
-  const focusTasks = tasks
-    .filter((t) =>
-      t.status === "blocked" ||
-      t.status === "in_review" ||
-      (t.due_date && t.due_date <= today && t.status !== "completed")
-    )
-    .slice(0, 8);
+        {/* Lead Top Summary */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <MetricCard label="Active Tasks" value={metrics.active} href="/tasks?status=in_progress" />
+          <MetricCard label="In Review" value={metrics.inReview} href="/tasks?status=in_review" />
+          <MetricCard label="Blocked" value={metrics.blocked} href="/tasks?status=blocked" highlight />
+          <MetricCard label="Overdue" value={metrics.overdue} href="/tasks?due=overdue" highlight />
+          <MetricCard label="Due Soon" value={metrics.dueSoon} href="/tasks?due=today" />
+          <MetricCard label="Completed" value={metrics.completed} href="/tasks?status=completed" />
+        </div>
 
-  const recentTasks = tasks.slice(0, 6);
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Needs Attention Queue */}
+          <div className="rounded-lg border border-surface-line bg-surface-panel p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+                <ShieldAlert size={16} className="text-amber-400" /> Needs Attention
+              </h2>
+              <span className="text-xs text-slate-500">{needsAttention.length} items</span>
+            </div>
+
+            {needsAttention.length === 0 ? (
+              <EmptyState title="All caught up" detail="No blocked, overdue, or pending review tasks." />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-surface-line text-slate-500">
+                      <th className="pb-2">Task</th>
+                      <th className="pb-2">Assignee</th>
+                      <th className="pb-2">Status</th>
+                      <th className="pb-2">Due</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-surface-line">
+                    {needsAttention.slice(0, 6).map((t) => (
+                      <tr key={t.id} className="hover:bg-surface-raised">
+                        <td className="py-2 pr-2 font-medium text-slate-200">
+                          <Link href={`/tasks/${t.id}`} className="hover:underline">
+                            {t.title}
+                          </Link>
+                        </td>
+                        <td className="py-2 pr-2 text-slate-400">{t.assignee?.full_name ?? "—"}</td>
+                        <td className="py-2 pr-2">
+                          <StatusBadge status={t.status} />
+                        </td>
+                        <td className="py-2 text-slate-400">{t.due_date ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Review Queue */}
+          <div className="rounded-lg border border-surface-line bg-surface-panel p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+                <Clock size={16} className="text-blue-400" /> Pending Review Queue
+              </h2>
+              <span className="text-xs text-slate-500">{reviewQueue.length} submissions</span>
+            </div>
+
+            {reviewQueue.length === 0 ? (
+              <EmptyState title="Review queue clear" detail="No task submissions waiting for review." />
+            ) : (
+              <div className="space-y-2">
+                {reviewQueue.map((t) => (
+                  <div
+                    key={t.id}
+                    className="flex items-center justify-between rounded-md border border-surface-line bg-surface-raised p-3 text-xs"
+                  >
+                    <div className="min-w-0 pr-2">
+                      <Link href={`/tasks/${t.id}`} className="font-semibold text-slate-100 hover:underline truncate block">
+                        {t.title}
+                      </Link>
+                      <p className="text-slate-400 mt-0.5">Submitted by {t.assignee?.full_name ?? "Employee"}</p>
+                    </div>
+                    <Link
+                      href={`/tasks/${t.id}`}
+                      className="rounded bg-blue-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-blue-500 flex-shrink-0"
+                    >
+                      Review
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Team Workload Table */}
+        <div className="rounded-lg border border-surface-line bg-surface-panel p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-slate-100">Team Workload Distribution</h2>
+            <Link href="/employees" className="text-xs text-blue-400 hover:underline">
+              View employees →
+            </Link>
+          </div>
+
+          {workload.length === 0 ? (
+            <EmptyState title="No active employees" detail="Add employees to start tracking workload." />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-surface-line text-xs font-medium text-slate-500">
+                    <th className="pb-2.5 px-3">Employee</th>
+                    <th className="pb-2.5 px-3">Active Tasks</th>
+                    <th className="pb-2.5 px-3">High/Urgent</th>
+                    <th className="pb-2.5 px-3">Blocked</th>
+                    <th className="pb-2.5 px-3">Overdue</th>
+                    <th className="pb-2.5 px-3">Completed</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-line">
+                  {workload.map((w) => (
+                    <tr key={w.employee.id} className="hover:bg-surface-raised">
+                      <td className="py-2.5 px-3">
+                        <Link href={`/employees/${w.employee.id}`} className="font-medium text-slate-200 hover:text-white">
+                          {w.employee.full_name}
+                        </Link>
+                      </td>
+                      <td className="py-2.5 px-3 font-semibold text-slate-100">{w.activeCount}</td>
+                      <td className="py-2.5 px-3 text-amber-300">{w.highPriorityCount}</td>
+                      <td className="py-2.5 px-3 text-red-400">{w.blockedCount}</td>
+                      <td className="py-2.5 px-3 text-red-400">{w.overdueCount}</td>
+                      <td className="py-2.5 px-3 text-emerald-400">{w.completedCount}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  }
+
+  // Employee Dashboard
+  const { metrics, needsAttention, activeTasks, recentCompleted } = await getEmployeeDashboardMetrics(
+    supabase,
+    user.id
+  );
 
   return (
-    <section className="p-4 md:p-6">
-      <div className="mb-6">
-        <h1 className="text-lg font-semibold text-slate-100">
-          {isLead ? "Team Dashboard" : `Welcome back, ${profile.full_name.split(" ")[0]}`}
-        </h1>
+    <section className="p-4 md:p-6 space-y-6">
+      <div>
+        <h1 className="text-lg font-semibold text-slate-100">My Dashboard</h1>
         <p className="mt-1 text-sm text-slate-500">
-          {isLead
-            ? "Overview of your team's tasks, blockers, and review queue."
-            : "Your assigned tasks and recent activity."}
+          Your clear daily priorities and assigned tasks.
         </p>
       </div>
 
-      {error && (
-        <div className="mb-4 rounded-md border border-amber-800/50 bg-amber-950/30 px-3 py-2.5">
-          <p className="text-sm text-amber-300">
-            Some data could not be loaded: {error}
-          </p>
+      {/* Employee Top Summary */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <MetricCard label="Active Tasks" value={metrics.active} href="/tasks" />
+        <MetricCard label="Due Soon" value={metrics.dueSoon} href="/tasks?due=today" />
+        <MetricCard label="Overdue" value={metrics.overdue} href="/tasks?due=overdue" highlight />
+        <MetricCard label="In Review" value={metrics.inReview} href="/tasks?status=in_review" />
+        <MetricCard label="Blocked" value={metrics.blocked} href="/tasks?status=blocked" highlight />
+        <MetricCard label="Completed" value={metrics.completed} href="/tasks?status=completed" />
+      </div>
+
+      {/* Needs Attention Section (Only rendered if items exist or standard empty state) */}
+      {needsAttention.length > 0 && (
+        <div className="rounded-lg border border-amber-800/40 bg-amber-950/10 p-4 space-y-3">
+          <h2 className="text-sm font-semibold text-amber-200 flex items-center gap-2">
+            <AlertTriangle size={16} className="text-amber-400" /> Needs Attention
+          </h2>
+          <div className="grid gap-2">
+            {needsAttention.map((t) => (
+              <div
+                key={t.id}
+                className="flex items-center justify-between rounded-md border border-surface-line bg-surface-panel p-3 text-xs"
+              >
+                <div>
+                  <Link href={`/tasks/${t.id}`} className="font-semibold text-slate-100 hover:underline">
+                    {t.title}
+                  </Link>
+                  <p className="text-slate-400 mt-0.5">
+                    Status: <span className="text-slate-200">{t.status.replace("_", " ")}</span>
+                  </p>
+                </div>
+                <Link
+                  href={`/tasks/${t.id}`}
+                  className="rounded border border-surface-line px-2.5 py-1 text-slate-200 hover:bg-surface-raised"
+                >
+                  View
+                </Link>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Stats */}
-      <div className="mb-6 grid gap-3 grid-cols-2 md:grid-cols-5">
-        <StatCard label="Active" value={active} />
-        <StatCard label="Completed" value={completed} />
-        <StatCard label="Overdue" value={overdue} highlight />
-        <StatCard label="Blocked" value={blocked} highlight />
-        <StatCard label="In Review" value={inReview} />
-      </div>
-
-      <div className="grid gap-5 xl:grid-cols-[1fr_320px]">
-        {/* Focus / Tasks list */}
-        <div className="rounded-lg border border-surface-line bg-surface-panel">
-          <div className="flex items-center justify-between border-b border-surface-line px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-100">
-              {focusTasks.length > 0 ? "Needs Attention" : "Recent Tasks"}
-            </h2>
-            <Link
-              href="/tasks"
-              className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
-            >
-              View all →
-            </Link>
-          </div>
-          <div className="p-2">
-            {(focusTasks.length > 0 ? focusTasks : recentTasks).length > 0 ? (
-              (focusTasks.length > 0 ? focusTasks : recentTasks).map((task) => (
-                <TaskRow key={task.id} task={task} />
-              ))
-            ) : (
-              <div className="px-3 py-8 text-center">
-                <p className="text-sm text-slate-500">
-                  {isLead
-                    ? "No tasks yet. Create your first task to get started."
-                    : "No tasks assigned to you yet."}
-                </p>
-              </div>
-            )}
-          </div>
+      {/* Active Work Table */}
+      <div className="rounded-lg border border-surface-line bg-surface-panel p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-100">Assigned Active Work</h2>
+          <Link href="/tasks" className="text-xs text-blue-400 hover:underline">
+            View all →
+          </Link>
         </div>
 
-        {/* Recent Activity */}
-        <div className="rounded-lg border border-surface-line bg-surface-panel">
-          <div className="border-b border-surface-line px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-100">Recent Activity</h2>
-          </div>
-          <div className="p-4">
-            {activity.length > 0 ? (
-              <div className="grid gap-3">
-                {activity.map((item) => (
-                  <Link
-                    href={`/tasks/${item.task_id}`}
-                    key={item.id}
-                    className="border-l-2 border-surface-line pl-3 text-sm text-slate-400 hover:text-slate-200 hover:border-blue-700 transition-colors duration-150"
-                  >
-                    <span className="block text-slate-300 leading-snug">
-                      {item.action.replaceAll("_", " ")}
-                    </span>
-                    <small className="text-slate-600 text-xs">
-                      {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
-                    </small>
-                  </Link>
+        {activeTasks.length === 0 ? (
+          <EmptyState title="You're all caught up" detail="No active tasks assigned to you right now." />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-surface-line text-xs font-medium text-slate-500">
+                  <th className="pb-2.5 px-4">Task</th>
+                  <th className="pb-2.5 px-4">Status</th>
+                  <th className="pb-2.5 px-4">Priority</th>
+                  <th className="pb-2.5 px-4">Due Date</th>
+                  <th className="pb-2.5 px-4">Progress</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activeTasks.map((t) => (
+                  <TaskTableRow key={t.id} task={t} />
                 ))}
-              </div>
-            ) : (
-              <p className="text-sm text-slate-500">No activity yet.</p>
-            )}
+              </tbody>
+            </table>
           </div>
-        </div>
+        )}
       </div>
     </section>
   );

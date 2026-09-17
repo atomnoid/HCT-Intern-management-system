@@ -1,89 +1,45 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Users } from "lucide-react";
 import { getSessionProfile } from "@/lib/auth";
-import { fetchAllEmployees } from "@/lib/data/profile";
+import { createClient } from "@/lib/supabase/server";
+import { getTeamWorkload } from "@/lib/data/dashboard";
 import { EmptyState } from "@/components/ui/state";
 import { RoleBadge } from "@/components/ui/badges";
 
 export const metadata = {
   title: "Employees | HCT Tracker",
-  description: "View and manage your team members",
+  description: "View and manage team members and workload distribution",
 };
-
-function EmployeeRow({
-  profile,
-}: {
-  profile: {
-    id: string;
-    full_name: string;
-    email: string | null;
-    role: "lead" | "employee" | "intern";
-    is_active: boolean;
-    created_at: string;
-  };
-}) {
-  const initials = profile.full_name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
-  return (
-    <div className="flex items-center gap-3 rounded-lg border border-surface-line bg-surface-panel px-4 py-3 hover:bg-surface-raised transition-colors duration-150">
-      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-blue-800/40 bg-blue-900/30">
-        <span className="text-xs font-semibold text-blue-300">{initials}</span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="truncate text-sm font-medium text-slate-100">{profile.full_name}</p>
-        <p className="truncate text-xs text-slate-500">{profile.email ?? "—"}</p>
-      </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <RoleBadge role={profile.role} />
-        {!profile.is_active && (
-          <span className="inline-flex items-center rounded border border-slate-700 px-1.5 py-0.5 text-xs text-slate-500">
-            Inactive
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default async function EmployeesPage() {
   const { profile } = await getSessionProfile();
+  const supabase = await createClient();
 
-  // Server-side role enforcement (not just hiding nav)
   if (profile.role !== "lead") {
     redirect("/dashboard");
   }
 
-  const { data: employees, error } = await fetchAllEmployees();
+  const workloadList = await getTeamWorkload(supabase);
 
   return (
-    <section className="p-4 md:p-6">
-      <div className="mb-6 flex items-start justify-between gap-4">
+    <section className="p-4 md:p-6 space-y-6">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-lg font-semibold text-slate-100">Employees</h1>
           <p className="mt-1 text-sm text-slate-500">
-            All team members in your organization.
+            Factual workload breakdown across team members.
           </p>
         </div>
         <span className="inline-flex items-center rounded-md border border-surface-line bg-surface-raised px-2.5 py-1 text-xs text-slate-400">
-          {employees.length} member{employees.length !== 1 ? "s" : ""}
+          {workloadList.length} member{workloadList.length !== 1 ? "s" : ""}
         </span>
       </div>
 
-      {error && (
-        <div className="mb-4 rounded-md border border-red-800/50 bg-red-950/30 px-3 py-2.5">
-          <p className="text-sm text-red-300">Failed to load employees: {error}</p>
-        </div>
-      )}
-
-      {employees.length === 0 && !error ? (
+      {workloadList.length === 0 ? (
         <EmptyState
-          title="No employees yet"
-          detail="Employees will appear here once they create their accounts."
+          title="No employees found"
+          detail="Active employees will appear here as they join."
           action={
             <div className="flex h-12 w-12 items-center justify-center rounded-full border border-surface-line bg-surface-raised">
               <Users size={20} className="text-slate-500" />
@@ -91,10 +47,42 @@ export default async function EmployeesPage() {
           }
         />
       ) : (
-        <div className="grid gap-2">
-          {employees.map((emp) => (
-            <EmployeeRow key={emp.id} profile={emp} />
-          ))}
+        <div className="overflow-x-auto rounded-lg border border-surface-line bg-surface-panel">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-surface-line bg-surface-raised text-xs font-medium text-slate-500">
+                <th className="py-3 px-4">Employee</th>
+                <th className="py-3 px-4">Role</th>
+                <th className="py-3 px-4">Active Tasks</th>
+                <th className="py-3 px-4">High/Urgent</th>
+                <th className="py-3 px-4">In Review</th>
+                <th className="py-3 px-4">Blocked</th>
+                <th className="py-3 px-4">Overdue</th>
+                <th className="py-3 px-4">Completed</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-surface-line">
+              {workloadList.map(({ employee: emp, activeCount, highPriorityCount, inReviewCount, blockedCount, overdueCount, completedCount }) => (
+                <tr key={emp.id} className="hover:bg-surface-raised transition-colors">
+                  <td className="py-3 px-4">
+                    <Link href={`/employees/${emp.id}`} className="font-medium text-slate-100 hover:underline block truncate max-w-xs">
+                      {emp.full_name}
+                    </Link>
+                    <span className="text-xs text-slate-500 block">{emp.email ?? "—"}</span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <RoleBadge role={emp.role} />
+                  </td>
+                  <td className="py-3 px-4 font-semibold text-slate-100">{activeCount}</td>
+                  <td className="py-3 px-4 text-amber-300">{highPriorityCount}</td>
+                  <td className="py-3 px-4 text-amber-400">{inReviewCount}</td>
+                  <td className="py-3 px-4 text-red-400">{blockedCount}</td>
+                  <td className="py-3 px-4 text-red-400">{overdueCount}</td>
+                  <td className="py-3 px-4 text-emerald-400">{completedCount}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </section>
