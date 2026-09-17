@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import { getSessionProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getTasks, getEmployees } from "@/lib/data";
+import { TaskFilters } from "@/components/tasks/task-filters";
 import { EmptyState } from "@/components/ui/state";
 import { StatusBadge, PriorityBadge, ProgressBar } from "@/components/ui/badges";
 
@@ -22,10 +23,14 @@ export default async function TasksPage({
   const isLead = profile.role === "lead";
 
   let tasks: Awaited<ReturnType<typeof getTasks>> = [];
+  let employees: Awaited<ReturnType<typeof getEmployees>> = [];
   let fetchError: string | null = null;
 
   try {
     tasks = await getTasks(supabase, profile, params);
+    if (isLead) {
+      employees = await getEmployees(supabase);
+    }
   } catch (err) {
     fetchError = err instanceof Error ? err.message : "Failed to load tasks.";
   }
@@ -51,6 +56,8 @@ export default async function TasksPage({
           </Link>
         )}
       </div>
+
+      <TaskFilters interns={employees} role={profile.role === "lead" ? "lead" : "intern"} />
 
       {fetchError && (
         <div className="mb-4 rounded-md border border-red-800/50 bg-red-950/30 px-3 py-2.5">

@@ -5,6 +5,7 @@ import {
   reportBlockerAction,
   resolveBlockerAction,
   reviewSubmissionAction,
+  startTaskAction,
   submitTaskAction,
   toggleChecklistAction,
   updateProgressAction,
@@ -184,6 +185,16 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
             <h2 className="mb-3 text-sm font-semibold text-slate-100">
               {isLead ? "Lead Actions" : "My Actions"}
             </h2>
+
+            {/* Start Task action */}
+            {task.status === "todo" && (isAssignee || isLead) && (
+              <form action={startTaskAction} className="mb-4">
+                <input type="hidden" name="taskId" value={task.id} />
+                <button className="focus-ring w-full rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500">
+                  Start Task
+                </button>
+              </form>
+            )}
 
             {/* Report blocker */}
             {!openBlocker && (

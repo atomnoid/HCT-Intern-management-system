@@ -31,6 +31,15 @@ export async function createTaskAction(formData: FormData) {
   redirect(`/tasks/${data.id}`);
 }
 
+export async function startTaskAction(formData: FormData) {
+  const { supabase } = await getSessionProfile();
+  const taskId = String(formData.get("taskId"));
+  const { error } = await supabase.rpc("start_task", { task_uuid: taskId });
+  if (error) throw new Error(cleanMessage(error));
+  revalidatePath(`/tasks/${taskId}`);
+  revalidatePath("/dashboard");
+}
+
 export async function updateProgressAction(formData: FormData) {
   const { supabase } = await getSessionProfile();
   const parsed = progressSchema.safeParse(Object.fromEntries(formData));
