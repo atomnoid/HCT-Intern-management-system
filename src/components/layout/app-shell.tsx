@@ -130,13 +130,17 @@ function NavLink({
 // ---- Sidebar content ----
 function SidebarContent({
   profile,
+  unreadNotificationsCount = 0,
   onNavClick,
 }: {
   profile: Profile;
+  unreadNotificationsCount?: number;
   onNavClick?: () => void;
 }) {
   const isLead = profile.role === "lead";
-  const visibleNav = NAV_ITEMS.filter((item) => !item.leadOnly || isLead);
+  const visibleNav = NAV_ITEMS.map((item) =>
+    item.href === "/notifications" ? { ...item, badge: unreadNotificationsCount } : item
+  ).filter((item) => !item.leadOnly || isLead);
 
   return (
     <div className="flex h-full flex-col">
@@ -231,9 +235,11 @@ function Breadcrumb({ pathname }: { pathname: string }) {
 // ---- Main AppShell ----
 export function AppShell({
   profile,
+  unreadNotificationsCount = 0,
   children,
 }: {
   profile: Profile;
+  unreadNotificationsCount?: number;
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -245,7 +251,7 @@ export function AppShell({
       <div className="hidden md:flex md:h-screen md:overflow-hidden">
         {/* Sidebar */}
         <aside className="w-60 flex-shrink-0 overflow-y-auto border-r border-surface-line bg-surface-sidebar">
-          <SidebarContent profile={profile} />
+          <SidebarContent profile={profile} unreadNotificationsCount={unreadNotificationsCount} />
         </aside>
 
         {/* Main area */}
