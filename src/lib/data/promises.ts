@@ -25,7 +25,7 @@ export async function getUserNotifications(supabase: SupabaseClient, userId: str
     .limit(100);
 
   if (error) {
-    console.error("Error fetching user notifications:", error);
+    console.error("Error fetching user notifications:", error.message || error.code || JSON.stringify(error));
     return [];
   }
   return (data ?? []) as Notification[];
