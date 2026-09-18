@@ -331,7 +331,8 @@ export function AppShell({
             <div className="flex h-7 w-7 items-center justify-center rounded-md border border-blue-500/30 bg-blue-500/10">
               <Sparkles className="h-4 w-4 text-blue-400" />
             </div>
-            <span className="text-sm font-bold text-slate-100 tracking-tight">HCT Tracker</span>
+            <span className="text-sm font-bold text-slate-100 tracking-tight">HCT Intern System</span>
+
           </Link>
           <button
             onClick={() => setMobileOpen(true)}
