@@ -12,27 +12,27 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
   function Input({ label, error, hint, className, id, ...props }, ref) {
     const inputId = id ?? (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
     return (
-      <div className="grid gap-1">
+      <div className="grid gap-1.5">
         {label && (
-          <label htmlFor={inputId} className="text-xs font-medium text-slate-300">
+          <label htmlFor={inputId} className="text-xs font-semibold text-slate-300 tracking-tight">
             {label}
-            {props.required && <span className="ml-0.5 text-slate-500">*</span>}
+            {props.required && <span className="ml-0.5 text-rose-400">*</span>}
           </label>
         )}
         <input
           ref={ref}
           id={inputId}
           className={clsx(
-            "h-8 rounded-md border bg-surface-raised px-3 text-sm text-slate-100 placeholder-slate-500",
-            "border-surface-line focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500",
+            "h-9 rounded-lg border bg-surface-app/70 px-3.5 text-sm text-slate-100 placeholder-slate-500 transition-all duration-150",
+            "border-white/10 focus:border-blue-500/70 focus:bg-surface-app focus:outline-none focus:ring-2 focus:ring-blue-500/20",
             "disabled:cursor-not-allowed disabled:opacity-50",
-            error && "border-red-700 focus:border-red-500 focus:ring-red-500",
+            error && "border-rose-500/60 focus:border-rose-500 focus:ring-rose-500/20",
             className
           )}
           {...props}
         />
-        {hint && !error && <p className="text-xs text-slate-500">{hint}</p>}
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {hint && !error && <p className="text-xs text-slate-400">{hint}</p>}
+        {error && <p className="text-xs font-medium text-rose-400">{error}</p>}
       </div>
     );
   }
@@ -49,27 +49,27 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   function Textarea({ label, error, hint, className, id, ...props }, ref) {
     const inputId = id ?? (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
     return (
-      <div className="grid gap-1">
+      <div className="grid gap-1.5">
         {label && (
-          <label htmlFor={inputId} className="text-xs font-medium text-slate-300">
+          <label htmlFor={inputId} className="text-xs font-semibold text-slate-300 tracking-tight">
             {label}
-            {props.required && <span className="ml-0.5 text-slate-500">*</span>}
+            {props.required && <span className="ml-0.5 text-rose-400">*</span>}
           </label>
         )}
         <textarea
           ref={ref}
           id={inputId}
           className={clsx(
-            "min-h-20 rounded-md border bg-surface-raised px-3 py-2 text-sm text-slate-100 placeholder-slate-500",
-            "border-surface-line focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500",
+            "min-h-24 rounded-lg border bg-surface-app/70 px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-500 transition-all duration-150",
+            "border-white/10 focus:border-blue-500/70 focus:bg-surface-app focus:outline-none focus:ring-2 focus:ring-blue-500/20",
             "disabled:cursor-not-allowed disabled:opacity-50 resize-y",
-            error && "border-red-700 focus:border-red-500 focus:ring-red-500",
+            error && "border-rose-500/60 focus:border-rose-500 focus:ring-rose-500/20",
             className
           )}
           {...props}
         />
-        {hint && !error && <p className="text-xs text-slate-500">{hint}</p>}
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {hint && !error && <p className="text-xs text-slate-400">{hint}</p>}
+        {error && <p className="text-xs font-medium text-rose-400">{error}</p>}
       </div>
     );
   }
@@ -86,29 +86,29 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   function Select({ label, error, hint, className, id, children, ...props }, ref) {
     const inputId = id ?? (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
     return (
-      <div className="grid gap-1">
+      <div className="grid gap-1.5">
         {label && (
-          <label htmlFor={inputId} className="text-xs font-medium text-slate-300">
+          <label htmlFor={inputId} className="text-xs font-semibold text-slate-300 tracking-tight">
             {label}
-            {props.required && <span className="ml-0.5 text-slate-500">*</span>}
+            {props.required && <span className="ml-0.5 text-rose-400">*</span>}
           </label>
         )}
         <select
           ref={ref}
           id={inputId}
           className={clsx(
-            "h-8 rounded-md border bg-surface-raised px-3 text-sm text-slate-100",
-            "border-surface-line focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500",
+            "h-9 rounded-lg border bg-surface-app/70 px-3.5 text-sm text-slate-100 transition-all duration-150",
+            "border-white/10 focus:border-blue-500/70 focus:bg-surface-app focus:outline-none focus:ring-2 focus:ring-blue-500/20",
             "disabled:cursor-not-allowed disabled:opacity-50",
-            error && "border-red-700",
+            error && "border-rose-500/60 focus:border-rose-500 focus:ring-rose-500/20",
             className
           )}
           {...props}
         >
           {children}
         </select>
-        {hint && !error && <p className="text-xs text-slate-500">{hint}</p>}
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {hint && !error && <p className="text-xs text-slate-400">{hint}</p>}
+        {error && <p className="text-xs font-medium text-rose-400">{error}</p>}
       </div>
     );
   }
@@ -125,9 +125,10 @@ export function Label({
   required?: boolean;
 }) {
   return (
-    <label htmlFor={htmlFor} className="text-xs font-medium text-slate-300">
+    <label htmlFor={htmlFor} className="text-xs font-semibold text-slate-300 tracking-tight">
       {children}
-      {required && <span className="ml-0.5 text-slate-500">*</span>}
+      {required && <span className="ml-0.5 text-rose-400">*</span>}
     </label>
   );
 }
+

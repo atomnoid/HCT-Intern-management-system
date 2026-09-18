@@ -6,19 +6,20 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
+        sans: ["Plus Jakarta Sans", "Inter", "system-ui", "-apple-system", "sans-serif"],
       },
       colors: {
         surface: {
-          app:     "#0b0f14",
-          sidebar: "#0f1419",
-          panel:   "#131a22",
-          raised:  "#18212d",
-          line:    "#1e2d3d",
+          app:     "#090d12",
+          sidebar: "#0c1017",
+          panel:   "#111620",
+          raised:  "#161d2a",
+          line:    "rgba(255, 255, 255, 0.08)",
+          subtle:  "rgba(255, 255, 255, 0.04)",
         },
       },
       borderColor: {
-        DEFAULT: "#1e2d3d",
+        DEFAULT: "rgba(255, 255, 255, 0.08)",
       },
     },
   },
@@ -26,3 +27,4 @@ const config: Config = {
 };
 
 export default config;
+

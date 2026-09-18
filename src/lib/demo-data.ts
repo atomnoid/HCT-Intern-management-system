@@ -10,15 +10,17 @@ export const demoLead: Profile = {
   email: "lead@example.com",
   avatar_url: null,
   role: "lead",
+  is_active: true,
   created_at: iso(-30),
   updated_at: iso(0)
 };
 
 export const demoInterns: Profile[] = [
-  { id: "00000000-0000-4000-8000-000000000101", full_name: "Aayush", email: "aayush@example.com", avatar_url: null, role: "intern", created_at: iso(-12), updated_at: iso(0) },
-  { id: "00000000-0000-4000-8000-000000000102", full_name: "Rahul", email: "rahul@example.com", avatar_url: null, role: "intern", created_at: iso(-10), updated_at: iso(0) },
-  { id: "00000000-0000-4000-8000-000000000103", full_name: "Priya", email: "priya@example.com", avatar_url: null, role: "intern", created_at: iso(-8), updated_at: iso(0) }
+  { id: "00000000-0000-4000-8000-000000000101", full_name: "Aayush", email: "aayush@example.com", avatar_url: null, role: "intern", is_active: true, created_at: iso(-12), updated_at: iso(0) },
+  { id: "00000000-0000-4000-8000-000000000102", full_name: "Rahul", email: "rahul@example.com", avatar_url: null, role: "intern", is_active: true, created_at: iso(-10), updated_at: iso(0) },
+  { id: "00000000-0000-4000-8000-000000000103", full_name: "Priya", email: "priya@example.com", avatar_url: null, role: "intern", is_active: true, created_at: iso(-8), updated_at: iso(0) }
 ];
+
 
 export const demoTasks: Task[] = [
   { id: "00000000-0000-4000-8000-000000001001", title: "Implement Dashboard UI", description: "Build the lead dashboard and task overview.", assignee_id: demoInterns[0].id, created_by: demoLead.id, status: "in_progress", priority: "high", progress: 75, category: "Frontend", start_date: date(-3), due_date: date(0), completed_at: null, created_at: iso(-3), updated_at: iso(0), assignee: demoInterns[0], creator: demoLead },

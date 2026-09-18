@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { PromiseItem, Notification } from "@/types/database";
+import type { PromiseItem, Notification, Task, Profile } from "@/types/database";
+
 
 export async function getPromises(supabase: SupabaseClient, isLead: boolean, userId: string) {
   let query = supabase
@@ -12,9 +13,14 @@ export async function getPromises(supabase: SupabaseClient, isLead: boolean, use
   }
 
   const { data, error } = await query;
-  if (error) throw error;
-  return (data ?? []) as (PromiseItem & { task?: any; user?: any })[];
+  if (error) {
+    console.error("Error fetching promises:", error.message || error);
+    return [];
+  }
+  return (data ?? []) as (PromiseItem & { task?: Task | null; user?: Profile | null })[];
 }
+
+
 
 export async function getUserNotifications(supabase: SupabaseClient, userId: string) {
   const { data, error } = await supabase

@@ -46,11 +46,12 @@ export default async function PromisesPage({
   const filterTab = String(params.filter ?? "all");
 
   const filteredPromises = promises.filter((p) => {
-    if (filterTab === "active") return p.status === "active";
+    if (filterTab === "active") return p.status === "pending";
     if (filterTab === "fulfilled") return p.status === "fulfilled";
     if (filterTab === "missed") return p.status === "missed";
     return true;
   });
+
 
   return (
     <section className="p-4 md:p-6 space-y-6">

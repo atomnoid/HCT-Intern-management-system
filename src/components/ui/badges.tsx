@@ -6,14 +6,14 @@ import type { TaskPriority, TaskStatus, UserRole } from "@/types/database";
 type BadgeVariant = "default" | "blue" | "green" | "yellow" | "red" | "orange" | "purple" | "slate";
 
 const variantClasses: Record<BadgeVariant, string> = {
-  default: "border-slate-600 bg-slate-800/40 text-slate-300",
-  blue:    "border-blue-700/60 bg-blue-900/20 text-blue-300",
-  green:   "border-emerald-700/60 bg-emerald-900/20 text-emerald-300",
-  yellow:  "border-amber-700/60 bg-amber-900/20 text-amber-300",
-  red:     "border-red-700/60 bg-red-900/20 text-red-300",
-  orange:  "border-orange-700/60 bg-orange-900/20 text-orange-300",
-  purple:  "border-purple-700/60 bg-purple-900/20 text-purple-300",
-  slate:   "border-slate-700/60 bg-slate-800/30 text-slate-400",
+  default: "border-slate-700/50 bg-slate-800/40 text-slate-300",
+  blue:    "border-blue-500/30 bg-blue-500/10 text-blue-400",
+  green:   "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+  yellow:  "border-amber-500/30 bg-amber-500/10 text-amber-400",
+  red:     "border-rose-500/30 bg-rose-500/10 text-rose-400",
+  orange:  "border-orange-500/30 bg-orange-500/10 text-orange-400",
+  purple:  "border-purple-500/30 bg-purple-500/10 text-purple-400",
+  slate:   "border-slate-700/40 bg-slate-800/30 text-slate-400",
 };
 
 export function Badge({
@@ -28,7 +28,7 @@ export function Badge({
   return (
     <span
       className={clsx(
-        "inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-medium",
+        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-tight transition-colors select-none",
         variantClasses[variant],
         className
       )}
@@ -83,10 +83,10 @@ export function ProgressBar({ value, className }: { value: number; className?: s
   const pct = Math.max(0, Math.min(100, value));
   return (
     <div className={clsx("min-w-24", className)}>
-      <div className="h-1.5 overflow-hidden rounded-full bg-surface-line">
+      <div className="h-2 overflow-hidden rounded-full bg-surface-raised border border-white/[0.06]">
         <div
           className={clsx(
-            "h-1.5 rounded-full transition-all duration-300",
+            "h-full rounded-full transition-all duration-500 ease-out",
             pct === 100
               ? "bg-emerald-500"
               : pct >= 70
@@ -98,7 +98,8 @@ export function ProgressBar({ value, className }: { value: number; className?: s
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="mt-0.5 block text-xs text-slate-500">{pct}%</span>
+      <span className="mt-1 block text-[11px] font-medium text-slate-400 text-right">{pct}%</span>
     </div>
   );
 }
+
